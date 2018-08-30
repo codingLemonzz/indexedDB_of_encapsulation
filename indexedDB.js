@@ -8,6 +8,10 @@
 
 let bt_indexedDB = {
     db: '',
+    /**
+     * judge the indexedDB is supported in the browser.
+     * @returns {boolean}
+     */
     isSupport: function () {
         /**
          *Browser support：
@@ -17,13 +21,13 @@ let bt_indexedDB = {
         return !!indexedDB;
     },
     /**
-     * Open the database
+     * Open database
      * @param dbname(String) ---- database name.
      * @param version(Number) ---- database version,current version must be greater than before,and it should be the type of Integer.
      * @returns
      */
     open: function (dbname, version) {
-        return new Promise((resolve => {
+        return new Promise(resolve => {
             let request = window.indexedDB.open(dbname, version);
             request.onsuccess = function (event) {
                 db = event.target.result;
@@ -32,8 +36,46 @@ let bt_indexedDB = {
             request.onerror = function (error) {
                 resolve(false, error);
             }
-        }));
+        });
 
+    },
+    /**
+     * close database
+     * @returns
+     */
+    closeDB: function () {
+        return new Promise(resolve => {
+            let request = db.close();
+            request.onsuccess = function () {
+                resolve(true);
+            };
+            request.onerror = function (error) {
+                resolve(false, error);
+            }
+        })
+    },
+    /**
+     * delete database
+     * @param dbname(String)  ---- database name.
+     * @returns
+     */
+    deleteDB: function (dbname) {
+        return new Promise(resolve => {
+            let request = window.indexedDB.deleteDatabase(dbname);
+            request.onsuccess = function () {
+                resolve(true);
+            };
+            request.onerror = function (error) {
+                resolve(false, error);
+            }
+        });
+    },
+    /**
+     * get database Object.
+     * @returns database object
+     */
+    getDBObject: function(){
+        return db;
     },
     /**
      * Open the database,if it doesn't exist,the browser will creat it.
@@ -78,6 +120,55 @@ let bt_indexedDB = {
                 resolve(false, error);
             }
         });
+    },
+    /**
+     * create table in this database
+     * @param tableName(String)  ----table name in this database.
+     * @param index(Array)  ---- the indexes that you will create in your table.eg: [{name:indexName,attr:indexAttr,unique:true},......]
+     * @param keyPath(String)  ---- the primary key in the table,if it's empty,the indexedDB will create an auto increased primary key.
+     * @param data(Array)  ---- the init data in this table.
+     * @returns
+     */
+    createTable: function (tableName, index, keyPath, data) {
+        return new Promise(resolve => {
+            let objectStore;
+            if (!db.objectStoreNames.contains(tableName)) {
+                if (!!keyPath) {
+                    objectStore = db.createObjectStore(tableName, {keyPath: keyPath});
+                } else {
+                    objectStore = db.createObjectStore(tableName, {autoIncrement: true});
+                }
+                if (!!index) {
+                    for (let i = 0; i < index.length; i++) {
+                        objectStore.createIndex(index[i].name, index[i].attr, {unique: index[i].unique});
+                    }
+                }
+                if (!!data) {
+                    for (let i = 0; i < data.length; i++) {
+                        objectStore.add(data[i]);
+                    }
+                }
+                resolve(true);
+            }else{
+                resolve(false);
+            }
+        });
+    },
+    /**
+     * delete table in this database
+     * @param tableName(String)  ---- table name in this database
+     * @returns
+     */
+    deleteTable: function(tableName){
+      return new Promise(resolve => {
+          let request = db.deleteObjectStore(tableName);
+          request.onsuccess = function (event) {
+              resolve(true);
+          };
+          request.onerror = function (error) {
+              resolve(false,error);
+          };
+      });
     },
     /**
      * Save data to the table
@@ -198,6 +289,22 @@ let bt_indexedDB = {
                 resolve(false);
             }
         });
+    },
+    /**
+     * clear data in this table
+     * @param tableName(String)  ---- table name
+     * @returns
+     */
+    clearData: function (tableName) {
+        return new Promise(resolve => {
+            let objectStore = db.transaction(tableName, 'readwrite').objectStore(tableName);
+            let request = objectStore.clear();
+            request.onsuccess = function (event) {
+                resolve(true);
+            }
+            request.onerror = function (error) {
+                resolve(error);
+            }
+        })
     }
-
 };
