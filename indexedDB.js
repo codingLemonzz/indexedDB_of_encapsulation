@@ -15,7 +15,7 @@ let bt_indexedDB = {
     isSupport: function () {
         /**
          *Browser support：
-         *  FireFox 10+（all）、Chrome 23+（all）、Opera15+（all）IE10+（part of）、safari10+、safari fro IOS 10.2+
+         *  FireFox 10+（all）、Chrome 23+（all）、Opera15+（all）IE10+（part of）、safari10+、safari for IOS 10.2+
          */
         let indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB || null;
         return !!indexedDB;
